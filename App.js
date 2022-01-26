@@ -1,15 +1,13 @@
-import { View, Text } from "react-native";
+import { View, Text, SafeAreaView } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import HomeScreen from "./screens/HomeScreen";
+import NewPostScreen from "./screens/NewPostScreen";
 
 export default function App() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Universal React with Expo</Text>
-    </View>
+    <SafeAreaProvider>
+      {/* <HomeScreen /> */}
+      <NewPostScreen />
+    </SafeAreaProvider>
   );
 }
