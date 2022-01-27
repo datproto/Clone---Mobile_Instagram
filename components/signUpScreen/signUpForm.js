@@ -38,17 +38,30 @@ const SignUpForm = ({ navigation }) => {
 
   const onSignup = async (email, password, username, phone = "") => {
     try {
-      const authUser = await firebase
-        .auth()
-        .createUserWithEmailAndPassword(email, password);
+      const avatar = await getRandomProfilePicture();
 
-      db.collection("users").add({
-        owner_uid: authUser.user.uid,
-        username: username,
-        email: authUser.user.email,
-        phone: phone,
-        profile_picture: await getRandomProfilePicture(),
-      });
+      firebase
+        .auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then((userCredentials) => {
+          db.collection("users").doc(userCredentials.user.email).set({
+            owner_uid: userCredentials.user.uid,
+            username: username,
+            email: userCredentials.user.email,
+            phone: phone,
+            profile_picture: avatar,
+          });
+
+          if (userCredentials.user) {
+            userCredentials.user.updateProfile({
+              displayName: username,
+              photoURL: avatar,
+            });
+          }
+        })
+        .catch(function (error) {
+          alert(error.message);
+        });
     } catch (error) {
       Alert.alert("Yo! Problem happened: ", error.message);
     }

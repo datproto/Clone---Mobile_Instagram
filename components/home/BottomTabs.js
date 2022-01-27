@@ -2,6 +2,8 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React, { useState } from "react";
 import { Divider } from "react-native-elements";
 
+import { firebase, db } from "../../firebase";
+
 export const bottomTabsIcons = [
   {
     name: "Home",
@@ -39,7 +41,14 @@ const BottomTabs = ({ icons }) => {
   const Icon = ({ icon }) => (
     <TouchableOpacity onPress={() => setActiveTab(icon.name)}>
       <Image
-        source={{ uri: activeTab === icon.name ? icon.active : icon.inactive }}
+        source={{
+          uri:
+            icon.name === "Profile"
+              ? firebase.auth().currentUser.photoURL
+              : activeTab === icon.name
+              ? icon.active
+              : icon.inactive,
+        }}
         style={[
           styles.icon,
           icon.name === "Profile" ? styles.profilePic() : null,

@@ -2,6 +2,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import { Divider } from "react-native-elements";
 import { POSTS } from "../../data/post";
+import { firebase, db } from "../../firebase";
 
 const postFooterIcons = [
   {
@@ -28,13 +29,39 @@ const postFooterIcons = [
 ];
 
 const Post = ({ post }) => {
+  const handleLike = (post) => {
+    const currentLikeStatus = !post.likes_by_users.includes(
+      firebase.auth().currentUser.email
+    );
+
+    db.collection("users")
+      .doc(post.owner.email)
+      .collection("posts")
+      .doc(post.id)
+      .update({
+        likes_by_users: currentLikeStatus
+          ? firebase.firestore.FieldValue.arrayUnion(
+              firebase.auth().currentUser.email
+            )
+          : firebase.firestore.FieldValue.arrayRemove(
+              firebase.auth().currentUser.email
+            ),
+      })
+      .then(() => {
+        // console.log("Document successfully updated!");
+      })
+      .catch((error) => {
+        // console.log("Error updating document: ", error);
+      });
+  };
+
   return (
     <View style={{ marginBottom: 30 }}>
       <Divider color="#000" width={1} orientation="vertical" />
       <PostHeader post={post} />
       <PostImage post={post} />
       <View style={{ marginHorizontal: 15, marginTop: 10 }}>
-        <PostFooter />
+        <PostFooter post={post} handleLike={handleLike} />
         <Likes post={post} />
         <Caption post={post} />
         <CommentsSection post={post} />
@@ -50,14 +77,18 @@ const PostHeader = ({ post }) => {
       style={{
         flexDirection: "row",
         justifyContent: "space-between",
-        margin: 5,
+        marginHorizontal: 5,
+        marginVertical: 15,
         alignItems: "center",
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Image source={{ uri: post.owner.picture }} style={styles.story} />
-        <Text style={{ color: "white", marginLeft: 5, fontWeight: "700" }}>
-          {post.owner.firstName} {post.owner.lastName}
+        <Image
+          source={{ uri: post.owner.profile_picture }}
+          style={styles.story}
+        />
+        <Text style={{ color: "white", marginLeft: 10, fontWeight: "700" }}>
+          {post.owner.username}
         </Text>
       </View>
 
@@ -69,25 +100,47 @@ const PostHeader = ({ post }) => {
 const PostImage = ({ post }) => (
   <View style={{ width: "100%", height: 450 }}>
     <Image
-      source={{ uri: post.image }}
+      source={{ uri: post.imageUrl }}
       style={{ height: "100%", resizeMode: "cover" }}
     />
   </View>
 );
 
-const PostFooter = () => (
-  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-    <View style={styles.leftFootIconsContainer}>
-      <Icon imgStyle={styles.footerIcon} imgUrl={postFooterIcons[0].imageUrl} />
-      <Icon imgStyle={styles.footerIcon} imgUrl={postFooterIcons[1].imageUrl} />
-      <Icon imgStyle={styles.footerIcon} imgUrl={postFooterIcons[2].imageUrl} />
-    </View>
+const PostFooter = ({ handleLike, post }) => {
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <View style={styles.leftFootIconsContainer}>
+        <TouchableOpacity onPress={() => handleLike(post)}>
+          <Image
+            style={styles.footerIcon}
+            source={{
+              uri: post.likes_by_users.includes(
+                firebase.auth().currentUser.email
+              )
+                ? postFooterIcons[0].likedImageUrl
+                : postFooterIcons[0].imageUrl,
+            }}
+          />
+        </TouchableOpacity>
+        <Icon
+          imgStyle={styles.footerIcon}
+          imgUrl={postFooterIcons[1].imageUrl}
+        />
+        <Icon
+          imgStyle={styles.footerIcon}
+          imgUrl={postFooterIcons[2].imageUrl}
+        />
+      </View>
 
-    <View>
-      <Icon imgStyle={styles.footerIcon} imgUrl={postFooterIcons[3].imageUrl} />
+      <View>
+        <Icon
+          imgStyle={styles.footerIcon}
+          imgUrl={postFooterIcons[3].imageUrl}
+        />
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const Icon = ({ imgStyle, imgUrl }) => (
   <TouchableOpacity>
@@ -98,7 +151,7 @@ const Icon = ({ imgStyle, imgUrl }) => (
 const Likes = ({ post }) => (
   <View style={{ flexDirection: "row", marginTop: 4 }}>
     <Text style={{ color: "white", fontWeight: "600" }}>
-      {post.likes.toLocaleString("en")} likes
+      {post.likes_by_users.length.toLocaleString("en")} likes
     </Text>
   </View>
 );
@@ -106,8 +159,8 @@ const Likes = ({ post }) => (
 const Caption = ({ post }) => (
   <View style={{ marginTop: 5 }}>
     <Text style={{ color: "white" }}>
-      <Text style={{ fontWeight: "700" }}>{post.owner.firstName}</Text>
-      <Text> {post.text}</Text>
+      <Text style={{ fontWeight: "700" }}>{post.owner.username}</Text>
+      <Text> {post.caption}</Text>
     </Text>
   </View>
 );
@@ -130,9 +183,7 @@ const Comments = ({ post }) => (
       post.comments.map((cmt, index) => (
         <View key={index} style={{ flexDirection: "row", marginTop: 5 }}>
           <Text style={{ color: "white" }}>
-            <Text style={{ fontWeight: "700" }}>
-              {cmt.owner.firstName} {cmt.owner.lastName}
-            </Text>{" "}
+            <Text style={{ fontWeight: "700" }}>{cmt.owner.username}</Text>{" "}
             {cmt.message}
           </Text>
         </View>
@@ -148,7 +199,7 @@ const styles = StyleSheet.create({
     height: 35,
     borderRadius: 50,
     marginLeft: 6,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: "#ff8501",
   },
 

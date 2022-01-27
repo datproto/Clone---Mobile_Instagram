@@ -1,5 +1,6 @@
 import { Button, Image, StyleSheet, Text, TextInput, View } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { firebase, db } from "../../firebase";
 
 import * as Yup from "yup";
 import { Formik } from "formik";
@@ -15,14 +16,57 @@ const uploadPostSchema = Yup.object().shape({
 
 const FormikPostUploader = ({ navigation }) => {
   const [thumbnailUrl, setThumbnailUrl] = useState(PLACEHOLDER_IMG);
+  const [currentLoggedInUser, setCurrentLoggedInUser] = useState(null);
+
+  const getUsername = () => {
+    const user = firebase.auth().currentUser;
+    const unsubscribe = db
+      .collection("users")
+      .where("owner_uid", "==", user.uid)
+      .limit(1)
+      .onSnapshot((snapshot) =>
+        snapshot.docs.map((doc) => {
+          setCurrentLoggedInUser({
+            username: doc.data().username,
+            profilePicture: doc.data().profile_picture,
+          });
+        })
+      );
+    return unsubscribe;
+  };
+
+  useEffect(() => {
+    getUsername();
+  }, []);
+
+  const uploadPostToFirebase = (imageUrl, caption) => {
+    const unsubscribe = db
+      .collection("users")
+      .doc(firebase.auth().currentUser.email)
+      .collection("posts")
+      .add({
+        imageUrl: imageUrl,
+        owner: {
+          owner_uid: firebase.auth().currentUser.uid,
+          username: currentLoggedInUser.username,
+          profile_picture: currentLoggedInUser.profilePicture,
+        },
+        caption: caption,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        likes: 0,
+        likes_by_users: [],
+        comments: [],
+      })
+      .then(() => navigation.goBack());
+
+    return unsubscribe;
+  };
 
   return (
     <Formik
       initialValues={{ caption: "", imageUrl: "" }}
       onSubmit={(values) => {
-        console.log(values);
-        console.log("Your post was submitted successfully !!!");
-        navigation.goBack();
+        uploadPostToFirebase(values.imageUrl, values.caption);
       }}
       validationSchema={uploadPostSchema}
       validateOnMount={true}

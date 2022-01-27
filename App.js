@@ -1,13 +1,11 @@
-import { View, Text, SafeAreaView } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import SignedInStack from "./navigation";
-import HomeScreen from "./screens/HomeScreen";
-import NewPostScreen from "./screens/NewPostScreen";
+import AuthNavigation from "./authNavigation";
+
+import { LogBox } from "react-native";
 
 export default function App() {
-  return (
-    <SafeAreaProvider>
-      <SignedInStack />
-    </SafeAreaProvider>
-  );
+  LogBox.ignoreLogs([
+    "Setting a timer",
+    "Remote debugger is in a background tab",
+  ]);
+  return <AuthNavigation />;
 }
