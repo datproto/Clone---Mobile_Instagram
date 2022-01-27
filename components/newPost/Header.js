@@ -1,11 +1,12 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
 import { Image } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
 
-const Header = () => {
+const Header = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
         <Image
           source={{
             uri: "https://img.icons8.com/fluency-systems-regular/90/ffffff/back.png",

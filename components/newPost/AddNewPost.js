@@ -3,11 +3,11 @@ import React from "react";
 import Header from "./Header";
 import FormikPostUploader from "./FormikPostUploader";
 
-const AddNewPost = () => {
+const AddNewPost = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <Header />
-      <FormikPostUploader />
+      <Header navigation={navigation} />
+      <FormikPostUploader navigation={navigation} />
     </View>
   );
 };
