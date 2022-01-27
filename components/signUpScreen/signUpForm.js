@@ -1,4 +1,5 @@
 import {
+  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -7,6 +8,8 @@ import {
   View,
 } from "react-native";
 import React, { useEffect, useState } from "react";
+import { firebase, db } from "../../firebase";
+
 import { Formik } from "formik";
 import * as Yup from "yup";
 import "yup-phone";
@@ -27,11 +30,37 @@ const SignUpForm = ({ navigation }) => {
       .min(6, "Your password has to have at least 6 characters"),
   });
 
+  const getRandomProfilePicture = async () => {
+    const response = await fetch("https://randomuser.me/api");
+    const data = await response.json();
+    return data.results[0].picture.large;
+  };
+
+  const onSignup = async (email, password, username, phone = "") => {
+    try {
+      const authUser = await firebase
+        .auth()
+        .createUserWithEmailAndPassword(email, password);
+
+      db.collection("users").add({
+        owner_uid: authUser.user.uid,
+        username: username,
+        email: authUser.user.email,
+        phone: phone,
+        profile_picture: await getRandomProfilePicture(),
+      });
+    } catch (error) {
+      Alert.alert("Yo! Problem happened: ", error.message);
+    }
+  };
+
   return (
     <View style={styles.wrapper}>
       <Formik
         initialValues={{ email: "", username: "", phone: "", password: "" }}
-        onSubmit={(values) => console.log(values)}
+        onSubmit={(values) =>
+          onSignup(values.email, values.password, values.username, values.phone)
+        }
         validationSchema={signupFormSchema}
         validateOnMount={true}
       >
